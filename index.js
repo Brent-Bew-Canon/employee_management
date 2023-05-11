@@ -1,3 +1,6 @@
+const inquirer = require('inquirer');
+const connection = require('./config/connection')
+
 // Arrays of prompts
 const prompts = [
     {
