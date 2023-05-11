@@ -1,5 +1,5 @@
+const mysql = require('mysql2');
 const inquirer = require('inquirer');
-const connection = require('./config/connection')
 
 // Arrays of prompts
 const prompts = [
@@ -68,6 +68,13 @@ const updateRole = [
     }
 ]
 
+const connection = mysql.createConnection({
+    host: 'localhost',
+    user: 'root',
+    password: 'fY-6^uC-2^wK-9)eW-9^hZ-6(',
+    database: 'management'
+});
+
 //
 function init() {
     inquirer
@@ -87,7 +94,11 @@ function init() {
                     inquirer.prompt(updateRole)
                     break;
                 case "View All Employees":
-
+                    console.log("heck yeah")
+                    connection.query('SELECT * FROM employee', function (err, results, fields) {
+                        console.table(results)
+                    })
+                    console.log('finished')
                     break;
                 case "Vew All Departments":
 
