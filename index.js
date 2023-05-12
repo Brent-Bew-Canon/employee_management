@@ -100,7 +100,12 @@ async function init() {
                 })
                 break;
             case "Add Department":
-                inquirer.prompt(addDepartment)
+                reply = await inquirer.prompt(addDepartment)
+                let dept = new construct.Department(reply.name);
+                connection.query(`INSERT INTO department (name) VALUES ('${dept.name}');`)
+                connection.query('SELECT * FROM department', function (err, results) {
+                    console.table(results)
+                })
                 break;
             case "Add Role":
                 reply = await inquirer.prompt(addRole)

@@ -27,6 +27,12 @@ class Role {
     }
 }
 
+class Department {
+    constructor(name) {
+        this.name = name;
+    }
+}
 
-module.exports = { Table, Employee, Role };
+
+module.exports = { Table, Employee, Role, Department };
 
