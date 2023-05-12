@@ -1,12 +1,16 @@
 const mysql = require('mysql2');
 const inquirer = require('inquirer');
+const construct = require('./constructor')
+
+let reply
+let quit = false
 
 // Arrays of prompts
 const prompts = [
     {
         type: 'list',
         message: 'What would you like to do?',
-        choices: ["View All Employees", "Add Employee", "Update Employee Role", "View All Roles", "Add Role", "View All Departments", "Add Department"],
+        choices: ["View All Employees", "Add Employee", "Update Employee Role", "View All Roles", "Add Role", "View All Departments", "Add Department", "Quit"],
         name: 'selection'
 
     }];
@@ -52,6 +56,11 @@ const addRole = [
         type: 'input',
         message: 'What\'s the Role salary?',
         name: 'salary'
+    },
+    {
+        type: 'input',
+        message: 'What\'s the department ID?',
+        name: 'departmentId'
     }
 ]
 
@@ -75,43 +84,103 @@ const connection = mysql.createConnection({
     database: 'management'
 });
 
-//
-function init() {
-    inquirer
-        .prompt(prompts)
-        .then((response) => {
-            switch (response.selection) {
-                case "Add Employee":
-                    inquirer.prompt(addEmployee)
-                    break;
-                case "Add Department":
-                    inquirer.prompt(addDepartment)
-                    break;
-                case "Add Role":
-                    inquirer.prompt(addRole)
-                    break;
-                case "Update Employee Role":
-                    inquirer.prompt(updateRole)
-                    break;
-                case "View All Employees":
-                    console.log("heck yeah")
-                    connection.query('SELECT * FROM employee', function (err, results, fields) {
-                        console.table(results)
-                    })
-                    console.log('finished')
-                    break;
-                case "Vew All Departments":
 
-                    break;
-                case "Vew All Roles":
+async function init() {
+    try {
 
-                    break;
-                default:
-                    console.error("Selection Doesn't Match List");
-            }
-        })
-        .catch(err => console.log(err));
+        const response = await inquirer.prompt(prompts)
+
+        switch (response.selection) {
+            case "Add Employee":
+                reply = await inquirer.prompt(addEmployee)
+                let employ = new construct.Employee(reply.firstName, reply.lastName, reply.roleId, reply.managerId);
+                connection.query(`INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES ('${employ.fName}', '${employ.lName}', ${employ.roleId}, ${employ.managerId});`)
+                connection.query('SELECT * FROM employee', function (err, results) {
+                    console.table(results)
+                })
+                break;
+            case "Add Department":
+                inquirer.prompt(addDepartment)
+                break;
+            case "Add Role":
+                reply = await inquirer.prompt(addRole)
+                let role = new construct.Role(reply.title, reply.salary, reply.departmentId);
+                connection.query(`INSERT INTO role (title, salary, department_id) VALUES ('${role.title}', ${role.salary}, ${role.departmentId});`)
+                connection.query('SELECT * FROM role', function (err, results) {
+                    console.table(results)
+                })
+                break;
+            case "Update Employee Role":
+                inquirer.prompt(updateRole)
+                break;
+            case "View All Employees":
+                connection.query('SELECT * FROM employee', function (err, results) {
+                    console.table(results)
+                })
+                break;
+            case "Vew All Departments":
+
+                break;
+            case "Vew All Roles":
+
+                break;
+            case "Quit":
+                quit = true;
+                break;
+            default:
+                console.error("Selection Doesn't Match List");
+        }
+    }
+
+    catch (error) {
+        console.log(error)
+    }
+
 }
 
 // Function call to initialize app
 init();
+
+
+
+
+
+
+
+
+
+//
+// function init() {
+//     inquirer
+//         .prompt(prompts)
+//         .then((response) => {
+//             switch (response.selection) {
+//                 case "Add Employee":
+//                     inquirer.prompt(addEmployee)
+//                     break;
+//                 case "Add Department":
+//                     inquirer.prompt(addDepartment)
+//                     break;
+//                 case "Add Role":
+//                     inquirer.prompt(addRole)
+//                     break;
+//                 case "Update Employee Role":
+//                     inquirer.prompt(updateRole)
+//                     break;
+//                 case "View All Employees":
+//                     connection.query('SELECT * FROM employee', function (err, results, fields) {
+//                         console.table(results)
+//                     })
+//                     break;
+//                 case "Vew All Departments":
+
+//                     break;
+//                 case "Vew All Roles":
+
+//                     break;
+//                 default:
+//                     console.error("Selection Doesn't Match List");
+//             }
+//         })
+//         .catch(err => console.log(err));
+// }
