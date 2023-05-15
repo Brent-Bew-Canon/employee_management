@@ -8,6 +8,7 @@
 4. [Usage](#usage)
 5. [Contributing](#contributing)
 6. [Testing Instructions](#testing-instructions)
+7. [Walkthrough Video](#walkthrough-video)
 
 ## Description
 This command line app allows you to manage a database of employees, roles, and departments within a company via MYSQL database.
@@ -28,6 +29,9 @@ N/A
 
 ## Tests
 N/A
+
+## Walkthrough Video
+https://youtu.be/9TWCH5b2tCo
 
 
 

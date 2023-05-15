@@ -1,6 +1,6 @@
 const inquirer = require('inquirer');
 const construct = require('./js/constructor')
-const conn = require('./connection')
+const conn = require('./js/connection')
 const pmpt = require('./js/prompts')
 let reply
 
@@ -192,7 +192,7 @@ async function init() {
     }
 }
 
-// Function call to initialize app
+//Function call to initialize app
 init();
 
 module.exports.init = init;
