@@ -60,16 +60,16 @@ const addRole = [
 ]
 
 const updateRole = [
-    {
-        type: 'input',
-        message: 'Which employee would you like to update?',
-        name: 'empId'
-    },
-    {
-        type: 'input',
-        message: 'What\'s the employee\'s new role ID?',
-        name: 'newRole'
-    }
+    // {
+    //     type: 'input',
+    //     message: 'Which employee would you like to update?',
+    //     name: 'empId'
+    // },
+    // {
+    //     type: 'input',
+    //     message: 'What\'s the employee\'s new role ID?',
+    //     name: 'newRole'
+    // }
 ]
 
 const connection = mysql.createConnection({
@@ -174,8 +174,46 @@ async function init() {
                 break;
 
             case "Update Employee Role":
-                reply = await inquirer.prompt(updateRole)
-                connection.query(`UPDATE employee SET role_id = ${reply.newRole} WHERE id = ${reply.empId}`)
+                connection.query('SELECT * FROM employee', async function (err, results) {
+                    if (err) {
+                        throw err
+                    }
+                    let listEmp = results.map(function (emp) {
+                        return {
+                            name: `${emp.first_name}  ${emp.last_name}`,
+                            value: emp.id
+                        }
+                    })
+
+                    updateRole.push({
+                        type: 'list',
+                        message: 'Which employee would you like to update?',
+                        choices: listEmp,
+                        name: 'empId'
+                    })
+
+                    connection.query(`SELECT * FROM role`, async function (err, roles) {
+                        if (err) {
+                            throw err;
+                        }
+                        let listRole = roles.map(function (role) {
+                            return {
+                                name: role.title,
+                                value: role.id
+                            }
+                        })
+
+                        updateRole.push({
+                            type: 'list',
+                            message: 'What\'s the employee\'s new role ID?',
+                            choices: listRole,
+                            name: 'newRole'
+                        })
+                        reply = await inquirer.prompt(updateRole)
+                        connection.query(`UPDATE employee SET role_id = ${reply.newRole} WHERE id = ${reply.empId}`)
+                        init()
+                    })
+                })
                 break;
 
             case "View All Employees":
@@ -197,6 +235,9 @@ async function init() {
 
             case "View All Roles":
                 connection.query('SELECT role.title AS title, role.id AS role_id, department.name AS department, role.salary AS salary FROM role JOIN department ON role.department_id = department.id;', function (err, results) {
+                    if (err) {
+                        throw err;
+                    }
                     console.table(results)
                     init();
                 })
@@ -208,7 +249,6 @@ async function init() {
             default:
                 console.error("Selection Doesn't Match List");
         }
-        console.log("Process Terminated....\n Press Ctrl + C or CMD + C to exit app");
     }
     catch (error) {
         console.log(error)
