@@ -1,6 +1,6 @@
-const mysql = require('mysql2');
 const inquirer = require('inquirer');
 const construct = require('./constructor')
+const conn = require('./connection')
 
 let reply
 
@@ -50,15 +50,6 @@ const addRole = [
 
 const updateRole = []
 
-// Connection to access mysql database
-const connection = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: 'fY-6^uC-2^wK-9)eW-9^hZ-6(',
-    database: 'management'
-});
-
-
 async function init() {
     try {
 
@@ -68,7 +59,7 @@ async function init() {
         // switch statement to address each selection of actions from the main prompt
         switch (response.selection) {
             case "Add Employee":
-                connection.query('SELECT * FROM role', async function (err, results) {
+                conn.query('SELECT * FROM role', async function (err, results) {
                     if (err) {
                         throw err
                     }
@@ -87,7 +78,7 @@ async function init() {
                         name: 'roleId'
                     })
 
-                    connection.query('SELECT * FROM employee', async function (err, list) {
+                    conn.query('SELECT * FROM employee', async function (err, list) {
                         if (err) {
                             throw err
                         }
@@ -111,13 +102,10 @@ async function init() {
                         let employ = new construct.Employee(reply.firstName, reply.lastName, reply.roleId, reply.managerId);
 
                         //inserts user input into the myql database
-                        connection.query(`INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES ('${employ.fName}', '${employ.lName}', ${employ.roleId}, ${employ.managerId});`)
+                        conn.query(`INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES ('${employ.fName}', '${employ.lName}', ${employ.roleId}, ${employ.managerId});`)
 
                         //displays all the employees in a table
-                        connection.query('SELECT employee.id AS id, employee.first_name AS first_name, employee.last_name AS last_name, role.title AS job_title, department.name AS department, role.salary as salary, employee.manager_id as manager FROM employee JOIN role ON employee.role_id = role.id JOIN department ON department.id = role.department_id;', function (err, results) {
-                            console.table(results)
-                            init()
-                        })
+                        employ.showEmp();
                     })
                 })
                 break;
@@ -129,17 +117,14 @@ async function init() {
                 let dept = new construct.Department(reply.name);
 
                 //inserts user input into the mysql database
-                connection.query(`INSERT INTO department (name) VALUES ('${dept.name}');`)
+                conn.query(`INSERT INTO department (name) VALUES ('${dept.name}');`)
 
                 //dipslays all the departments in a table
-                connection.query('SELECT * FROM department', function (err, results) {
-                    console.table(results)
-                    init()
-                })
+                dept.showDep();
                 break;
 
             case "Add Role":
-                connection.query('SELECT * FROM department', async function (err, results) {
+                conn.query('SELECT * FROM department', async function (err, results) {
                     if (err) {
                         throw err;
                     }
@@ -163,18 +148,15 @@ async function init() {
                     let role = new construct.Role(reply.title, reply.salary, reply.departmentId);
 
                     //inserts user input into the mysql database
-                    connection.query(`INSERT INTO role (title, salary, department_id) VALUES ('${role.title}', ${role.salary}, ${role.departmentId});`)
+                    conn.query(`INSERT INTO role (title, salary, department_id) VALUES ('${role.title}', ${role.salary}, ${role.departmentId});`)
 
                     //displays all the roles fromd database
-                    connection.query('SELECT * FROM role', function (err, results) {
-                        console.table(results)
-                        init()
-                    })
+                    role.showRole();
                 })
                 break;
 
             case "Update Employee Role":
-                connection.query('SELECT * FROM employee', async function (err, results) {
+                conn.query('SELECT * FROM employee', async function (err, results) {
                     if (err) {
                         throw err
                     }
@@ -194,7 +176,7 @@ async function init() {
                         name: 'empId'
                     })
 
-                    connection.query(`SELECT * FROM role`, async function (err, roles) {
+                    conn.query(`SELECT * FROM role`, async function (err, roles) {
                         if (err) {
                             throw err;
                         }
@@ -218,7 +200,7 @@ async function init() {
                         reply = await inquirer.prompt(updateRole)
 
                         //inserts user input into the database to update role
-                        connection.query(`UPDATE employee SET role_id = ${reply.newRole} WHERE id = ${reply.empId}`)
+                        conn.query(`UPDATE employee SET role_id = ${reply.newRole} WHERE id = ${reply.empId}`)
                         init()
                     })
                 })
@@ -227,37 +209,22 @@ async function init() {
             case "View All Employees":
 
                 //queries the database and displays all the employees
-                connection.query('SELECT employee.id AS id, employee.first_name AS first_name, employee.last_name AS last_name, role.title AS job_title, department.name AS department, role.salary as salary, employee.manager_id as manager FROM employee JOIN role ON employee.role_id = role.id JOIN department ON department.id = role.department_id;', function (err, results) {
-                    if (err) {
-                        throw err;
-                    }
-                    console.table(results)
-                    init();
-                })
+                let table = new construct.Table();
+                table.showEmp();
                 break;
 
             case "View All Departments":
 
                 //queries the database and displays all the departments
-                connection.query('SELECT * FROM department', function (err, results) {
-                    if (err) {
-                        throw err;
-                    }
-                    console.table(results)
-                    init();
-                })
+                let dep = new construct.Table();
+                dep.showDep();
                 break;
 
             case "View All Roles":
 
                 //queries the database and displays all the roles
-                connection.query('SELECT role.title AS title, role.id AS role_id, department.name AS department, role.salary AS salary FROM role JOIN department ON role.department_id = department.id;', function (err, results) {
-                    if (err) {
-                        throw err;
-                    }
-                    console.table(results)
-                    init();
-                })
+                let role = new construct.Table();
+                role.showRole();
                 break;
 
             case "Quit":
@@ -274,3 +241,5 @@ async function init() {
 
 // Function call to initialize app
 init();
+
+module.exports.init = init;
