@@ -93,7 +93,9 @@ async function init() {
                 case "Add Employee":
                     reply = await inquirer.prompt(addEmployee)
                     let employ = new construct.Employee(reply.firstName, reply.lastName, reply.roleId, reply.managerId);
+
                     connection.query(`INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES ('${employ.fName}', '${employ.lName}', ${employ.roleId}, ${employ.managerId});`)
+
                     connection.query('SELECT * FROM employee', function (err, results) {
                         console.table(results)
                     })
@@ -101,7 +103,9 @@ async function init() {
                 case "Add Department":
                     reply = await inquirer.prompt(addDepartment)
                     let dept = new construct.Department(reply.name);
+
                     connection.query(`INSERT INTO department (name) VALUES ('${dept.name}');`)
+
                     connection.query('SELECT * FROM department', function (err, results) {
                         console.table(results)
                     })
@@ -109,7 +113,9 @@ async function init() {
                 case "Add Role":
                     reply = await inquirer.prompt(addRole)
                     let role = new construct.Role(reply.title, reply.salary, reply.departmentId);
+
                     connection.query(`INSERT INTO role (title, salary, department_id) VALUES ('${role.title}', ${role.salary}, ${role.departmentId});`)
+
                     connection.query('SELECT * FROM role', function (err, results) {
                         console.table(results)
                     })
@@ -149,6 +155,29 @@ async function init() {
 
 // Function call to initialize app
 init();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
