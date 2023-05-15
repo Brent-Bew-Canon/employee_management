@@ -4,10 +4,6 @@ class Table {
     constructor(name) {
         this.name = name;
     }
-
-    nap() {
-        console.log('Zzzzzzzzz');
-    }
 }
 
 class Employee {

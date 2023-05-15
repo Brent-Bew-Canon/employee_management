@@ -3,7 +3,6 @@ const inquirer = require('inquirer');
 const construct = require('./constructor')
 
 let reply
-let quit = false
 
 // Arrays of prompts
 const prompts = [
@@ -25,17 +24,12 @@ const addEmployee = [
         type: 'input',
         message: 'What\'s the employee\'s last name?',
         name: 'lastName'
-    },
-    {
-        type: 'input',
-        message: 'What\'s the employee\'s role id?',
-        name: 'roleId'
-    },
-    {
-        type: 'input',
-        message: 'What\'s the employee\'s manager id?',
-        name: 'managerId'
     }
+    // {
+    //     type: 'input',
+    //     message: 'What\'s the employee\'s manager id?',
+    //     name: 'managerId'
+    // }
 ]
 
 const addDepartment = [
@@ -57,11 +51,12 @@ const addRole = [
         message: 'What\'s the Role salary?',
         name: 'salary'
     },
-    {
-        type: 'input',
-        message: 'What\'s the department ID?',
-        name: 'departmentId'
-    }
+    // {
+    //     type: 'input',
+    //     message: 'What\'s the department ID?',
+    //     name: 'departmentId'
+    // },
+
 ]
 
 const updateRole = [
@@ -87,64 +82,131 @@ const connection = mysql.createConnection({
 
 async function init() {
     try {
-        while (!quit) {
-            const response = await inquirer.prompt(prompts)
-            switch (response.selection) {
-                case "Add Employee":
-                    reply = await inquirer.prompt(addEmployee)
-                    let employ = new construct.Employee(reply.firstName, reply.lastName, reply.roleId, reply.managerId);
-
-                    connection.query(`INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES ('${employ.fName}', '${employ.lName}', ${employ.roleId}, ${employ.managerId});`)
-
-                    connection.query('SELECT * FROM employee', function (err, results) {
-                        console.table(results)
+        const response = await inquirer.prompt(prompts)
+        switch (response.selection) {
+            case "Add Employee":
+                connection.query('SELECT * FROM role', async function (err, results) {
+                    if (err) {
+                        throw err
+                    }
+                    let listRoles = results.map(function (roles) {
+                        return {
+                            name: roles.title,
+                            value: roles.id
+                        }
                     })
-                    break;
-                case "Add Department":
-                    reply = await inquirer.prompt(addDepartment)
-                    let dept = new construct.Department(reply.name);
-
-                    connection.query(`INSERT INTO department (name) VALUES ('${dept.name}');`)
-
-                    connection.query('SELECT * FROM department', function (err, results) {
-                        console.table(results)
+                    addEmployee.push({
+                        type: 'list',
+                        message: 'What\'s the employee\'s role?',
+                        choices: listRoles,
+                        name: 'roleId'
                     })
-                    break;
-                case "Add Role":
+
+                    connection.query('SELECT * FROM employee', async function (err, list) {
+                        if (err) {
+                            throw err
+                        }
+                        let listMan = list.map(function (man) {
+                            return {
+                                name: `${man.first_name}  ${man.last_name}`,
+                                value: man.id
+                            }
+                        })
+                        addEmployee.push({
+                            type: 'list',
+                            message: 'Whose the employee\'s manager?',
+                            choices: listMan,
+                            name: 'managerId'
+                        })
+
+                        reply = await inquirer.prompt(addEmployee)
+                        let employ = new construct.Employee(reply.firstName, reply.lastName, reply.roleId, reply.managerId);
+
+                        connection.query(`INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES ('${employ.fName}', '${employ.lName}', ${employ.roleId}, ${employ.managerId});`)
+
+                        connection.query('SELECT employee.id AS id, employee.first_name AS first_name, employee.last_name AS last_name, role.title AS job_title, department.name AS department, role.salary as salary, employee.manager_id as manager FROM employee JOIN role ON employee.role_id = role.id JOIN department ON department.id = role.department_id;', function (err, results) {
+                            console.table(results)
+                            init()
+                        })
+                    })
+                })
+                break;
+
+            case "Add Department":
+                reply = await inquirer.prompt(addDepartment)
+                let dept = new construct.Department(reply.name);
+
+                connection.query(`INSERT INTO department (name) VALUES ('${dept.name}');`)
+
+                connection.query('SELECT * FROM department', function (err, results) {
+                    console.table(results)
+                    init()
+                })
+                break;
+
+            case "Add Role":
+                connection.query('SELECT * FROM department', async function (err, results) {
+                    if (err) {
+                        throw err;
+                    }
+                    let listDep = results.map(function (department) {
+                        return {
+                            name: department.name,
+                            value: department.id
+                        }
+                    })
+                    console.log(listDep);
+                    addRole.push({
+                        type: 'list',
+                        message: 'What\'s the department ID?',
+                        choices: listDep,
+                        name: 'departmentId'
+                    })
                     reply = await inquirer.prompt(addRole)
+                    console.log(reply);
                     let role = new construct.Role(reply.title, reply.salary, reply.departmentId);
-
                     connection.query(`INSERT INTO role (title, salary, department_id) VALUES ('${role.title}', ${role.salary}, ${role.departmentId});`)
-
                     connection.query('SELECT * FROM role', function (err, results) {
                         console.table(results)
+                        init()
                     })
-                    break;
-                case "Update Employee Role":
-                    reply = await inquirer.prompt(updateRole)
-                    connection.query(`UPDATE employee SET role_id = ${reply.newRole} WHERE id = ${reply.empId}`)
-                    break;
-                case "View All Employees":
-                    connection.query('SELECT employee.id AS id, employee.first_name AS first_name, employee.last_name AS last_name, role.title AS job_title, department.name AS department, role.salary as salary, employee.manager_id as manager FROM employee JOIN role ON employee.role_id = role.id JOIN department ON department.id = role.department_id;', function (err, results) {
-                        console.table(results)
-                    })
-                    break;
-                case "View All Departments":
-                    connection.query('SELECT * FROM department', function (err, results) {
-                        console.table(results)
-                    })
-                    break;
-                case "View All Roles":
-                    connection.query('SELECT role.title AS title, role.id AS role_id, department.name AS department, role.salary AS salary FROM role JOIN department ON role.department_id = department.id;', function (err, results) {
-                        console.table(results)
-                    })
-                    break;
-                case "Quit":
-                    quit = true;
-                    break;
-                default:
-                    console.error("Selection Doesn't Match List");
-            }
+                })
+                break;
+
+            case "Update Employee Role":
+                reply = await inquirer.prompt(updateRole)
+                connection.query(`UPDATE employee SET role_id = ${reply.newRole} WHERE id = ${reply.empId}`)
+                break;
+
+            case "View All Employees":
+                connection.query('SELECT employee.id AS id, employee.first_name AS first_name, employee.last_name AS last_name, role.title AS job_title, department.name AS department, role.salary as salary, employee.manager_id as manager FROM employee JOIN role ON employee.role_id = role.id JOIN department ON department.id = role.department_id;', function (err, results) {
+                    console.table(results)
+                    init();
+                })
+                break;
+
+            case "View All Departments":
+                connection.query('SELECT * FROM department', function (err, results) {
+                    if (err) {
+                        throw err;
+                    }
+                    console.table(results)
+                    init();
+                })
+                break;
+
+            case "View All Roles":
+                connection.query('SELECT role.title AS title, role.id AS role_id, department.name AS department, role.salary AS salary FROM role JOIN department ON role.department_id = department.id;', function (err, results) {
+                    console.table(results)
+                    init();
+                })
+                break;
+
+            case "Quit":
+                break;
+
+            default:
+                console.error("Selection Doesn't Match List");
         }
         console.log("Process Terminated....\n Press Ctrl + C or CMD + C to exit app");
     }
