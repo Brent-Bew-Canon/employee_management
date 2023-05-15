@@ -1,60 +1,15 @@
 const inquirer = require('inquirer');
-const construct = require('./constructor')
+const construct = require('./js/constructor')
 const conn = require('./connection')
+const pmpt = require('./js/prompts')
 
 let reply
-
-// Arrays of prompts
-const prompts = [
-    {
-        type: 'list',
-        message: 'What would you like to do?',
-        choices: ["View All Employees", "Add Employee", "Update Employee Role", "View All Roles", "Add Role", "View All Departments", "Add Department", "Quit"],
-        name: 'selection'
-
-    }];
-
-const addEmployee = [
-    {
-        type: 'input',
-        message: 'What\'s the employee\'s first name?',
-        name: 'firstName'
-    },
-    {
-        type: 'input',
-        message: 'What\'s the employee\'s last name?',
-        name: 'lastName'
-    }
-]
-
-const addDepartment = [
-    {
-        type: 'input',
-        message: 'What\'s the Department name?',
-        name: 'name'
-    }
-]
-
-const addRole = [
-    {
-        type: 'input',
-        message: 'What\'s the Role title?',
-        name: 'title'
-    },
-    {
-        type: 'input',
-        message: 'What\'s the Role salary?',
-        name: 'salary'
-    }
-]
-
-const updateRole = []
 
 async function init() {
     try {
 
         // prompts the user on specific actions like "View All Departments", etc.
-        const response = await inquirer.prompt(prompts)
+        const response = await inquirer.prompt(pmpt.prompts)
 
         // switch statement to address each selection of actions from the main prompt
         switch (response.selection) {
@@ -71,7 +26,7 @@ async function init() {
                             value: roles.id
                         }
                     })
-                    addEmployee.push({
+                    pmpt.addEmployee.push({
                         type: 'list',
                         message: 'What\'s the employee\'s role?',
                         choices: listRoles,
@@ -90,7 +45,7 @@ async function init() {
                                 value: man.id
                             }
                         })
-                        addEmployee.push({
+                        pmpt.addEmployee.push({
                             type: 'list',
                             message: 'Whose the employee\'s manager?',
                             choices: listMan,
@@ -98,7 +53,7 @@ async function init() {
                         })
 
                         //gives the new prompt to add an employee
-                        reply = await inquirer.prompt(addEmployee)
+                        reply = await inquirer.prompt(pmpt.addEmployee)
                         let employ = new construct.Employee(reply.firstName, reply.lastName, reply.roleId, reply.managerId);
 
                         //inserts user input into the myql database
@@ -113,7 +68,7 @@ async function init() {
             case "Add Department":
 
                 //gives prompt to add department
-                reply = await inquirer.prompt(addDepartment)
+                reply = await inquirer.prompt(pmpt.addDepartment)
                 let dept = new construct.Department(reply.name);
 
                 //inserts user input into the mysql database
@@ -136,7 +91,7 @@ async function init() {
                             value: department.id
                         }
                     })
-                    addRole.push({
+                    pmpt.addRole.push({
                         type: 'list',
                         message: 'What\'s the department ID?',
                         choices: listDep,
@@ -144,7 +99,7 @@ async function init() {
                     })
 
                     //gives the inquierer prompt to add a new role
-                    reply = await inquirer.prompt(addRole)
+                    reply = await inquirer.prompt(pmpt.addRole)
                     let role = new construct.Role(reply.title, reply.salary, reply.departmentId);
 
                     //inserts user input into the mysql database
@@ -169,7 +124,7 @@ async function init() {
                         }
                     })
 
-                    updateRole.push({
+                    pmpt.updateRole.push({
                         type: 'list',
                         message: 'Which employee would you like to update?',
                         choices: listEmp,
@@ -188,8 +143,7 @@ async function init() {
                                 value: role.id
                             }
                         })
-
-                        updateRole.push({
+                        pmpt.updateRole.push({
                             type: 'list',
                             message: 'What\'s the employee\'s new role ID?',
                             choices: listRole,
@@ -197,7 +151,7 @@ async function init() {
                         })
 
                         //gives inquirer prompt to update a role
-                        reply = await inquirer.prompt(updateRole)
+                        reply = await inquirer.prompt(pmpt.updateRole)
 
                         //inserts user input into the database to update role
                         conn.query(`UPDATE employee SET role_id = ${reply.newRole} WHERE id = ${reply.empId}`)

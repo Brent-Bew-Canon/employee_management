@@ -1,5 +1,5 @@
 const conn = require('./connection')
-const main = require('./index')
+const main = require('../index')
 
 class Table {
     constructor() { }
