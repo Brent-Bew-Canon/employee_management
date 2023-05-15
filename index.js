@@ -2,7 +2,6 @@ const inquirer = require('inquirer');
 const construct = require('./js/constructor')
 const conn = require('./connection')
 const pmpt = require('./js/prompts')
-
 let reply
 
 async function init() {
