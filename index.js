@@ -25,11 +25,6 @@ const addEmployee = [
         message: 'What\'s the employee\'s last name?',
         name: 'lastName'
     }
-    // {
-    //     type: 'input',
-    //     message: 'What\'s the employee\'s manager id?',
-    //     name: 'managerId'
-    // }
 ]
 
 const addDepartment = [
@@ -50,28 +45,12 @@ const addRole = [
         type: 'input',
         message: 'What\'s the Role salary?',
         name: 'salary'
-    },
-    // {
-    //     type: 'input',
-    //     message: 'What\'s the department ID?',
-    //     name: 'departmentId'
-    // },
-
+    }
 ]
 
-const updateRole = [
-    // {
-    //     type: 'input',
-    //     message: 'Which employee would you like to update?',
-    //     name: 'empId'
-    // },
-    // {
-    //     type: 'input',
-    //     message: 'What\'s the employee\'s new role ID?',
-    //     name: 'newRole'
-    // }
-]
+const updateRole = []
 
+// Connection to access mysql database
 const connection = mysql.createConnection({
     host: 'localhost',
     user: 'root',
@@ -82,13 +61,19 @@ const connection = mysql.createConnection({
 
 async function init() {
     try {
+
+        // prompts the user on specific actions like "View All Departments", etc.
         const response = await inquirer.prompt(prompts)
+
+        // switch statement to address each selection of actions from the main prompt
         switch (response.selection) {
             case "Add Employee":
                 connection.query('SELECT * FROM role', async function (err, results) {
                     if (err) {
                         throw err
                     }
+
+                    // maps over the roles to save/display them as an inquirer prompt
                     let listRoles = results.map(function (roles) {
                         return {
                             name: roles.title,
@@ -106,6 +91,8 @@ async function init() {
                         if (err) {
                             throw err
                         }
+
+                        // maps over the employee names to save/display them as an inquirer prompt
                         let listMan = list.map(function (man) {
                             return {
                                 name: `${man.first_name}  ${man.last_name}`,
@@ -119,11 +106,14 @@ async function init() {
                             name: 'managerId'
                         })
 
+                        //gives the new prompt to add an employee
                         reply = await inquirer.prompt(addEmployee)
                         let employ = new construct.Employee(reply.firstName, reply.lastName, reply.roleId, reply.managerId);
 
+                        //inserts user input into the myql database
                         connection.query(`INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES ('${employ.fName}', '${employ.lName}', ${employ.roleId}, ${employ.managerId});`)
 
+                        //displays all the employees in a table
                         connection.query('SELECT employee.id AS id, employee.first_name AS first_name, employee.last_name AS last_name, role.title AS job_title, department.name AS department, role.salary as salary, employee.manager_id as manager FROM employee JOIN role ON employee.role_id = role.id JOIN department ON department.id = role.department_id;', function (err, results) {
                             console.table(results)
                             init()
@@ -133,11 +123,15 @@ async function init() {
                 break;
 
             case "Add Department":
+
+                //gives prompt to add department
                 reply = await inquirer.prompt(addDepartment)
                 let dept = new construct.Department(reply.name);
 
+                //inserts user input into the mysql database
                 connection.query(`INSERT INTO department (name) VALUES ('${dept.name}');`)
 
+                //dipslays all the departments in a table
                 connection.query('SELECT * FROM department', function (err, results) {
                     console.table(results)
                     init()
@@ -149,23 +143,29 @@ async function init() {
                     if (err) {
                         throw err;
                     }
+
+                    // maps over the departments to save/display department names as inquirer prompt
                     let listDep = results.map(function (department) {
                         return {
                             name: department.name,
                             value: department.id
                         }
                     })
-                    console.log(listDep);
                     addRole.push({
                         type: 'list',
                         message: 'What\'s the department ID?',
                         choices: listDep,
                         name: 'departmentId'
                     })
+
+                    //gives the inquierer prompt to add a new role
                     reply = await inquirer.prompt(addRole)
-                    console.log(reply);
                     let role = new construct.Role(reply.title, reply.salary, reply.departmentId);
+
+                    //inserts user input into the mysql database
                     connection.query(`INSERT INTO role (title, salary, department_id) VALUES ('${role.title}', ${role.salary}, ${role.departmentId});`)
+
+                    //displays all the roles fromd database
                     connection.query('SELECT * FROM role', function (err, results) {
                         console.table(results)
                         init()
@@ -178,6 +178,8 @@ async function init() {
                     if (err) {
                         throw err
                     }
+
+                    //maps over the eomployee names to save/display names as inquirer prompt
                     let listEmp = results.map(function (emp) {
                         return {
                             name: `${emp.first_name}  ${emp.last_name}`,
@@ -196,6 +198,8 @@ async function init() {
                         if (err) {
                             throw err;
                         }
+
+                        //maps over the roles to save/display role titles as inquirer prompt
                         let listRole = roles.map(function (role) {
                             return {
                                 name: role.title,
@@ -209,7 +213,11 @@ async function init() {
                             choices: listRole,
                             name: 'newRole'
                         })
+
+                        //gives inquirer prompt to update a role
                         reply = await inquirer.prompt(updateRole)
+
+                        //inserts user input into the database to update role
                         connection.query(`UPDATE employee SET role_id = ${reply.newRole} WHERE id = ${reply.empId}`)
                         init()
                     })
@@ -217,13 +225,20 @@ async function init() {
                 break;
 
             case "View All Employees":
+
+                //queries the database and displays all the employees
                 connection.query('SELECT employee.id AS id, employee.first_name AS first_name, employee.last_name AS last_name, role.title AS job_title, department.name AS department, role.salary as salary, employee.manager_id as manager FROM employee JOIN role ON employee.role_id = role.id JOIN department ON department.id = role.department_id;', function (err, results) {
+                    if (err) {
+                        throw err;
+                    }
                     console.table(results)
                     init();
                 })
                 break;
 
             case "View All Departments":
+
+                //queries the database and displays all the departments
                 connection.query('SELECT * FROM department', function (err, results) {
                     if (err) {
                         throw err;
@@ -234,6 +249,8 @@ async function init() {
                 break;
 
             case "View All Roles":
+
+                //queries the database and displays all the roles
                 connection.query('SELECT role.title AS title, role.id AS role_id, department.name AS department, role.salary AS salary FROM role JOIN department ON role.department_id = department.id;', function (err, results) {
                     if (err) {
                         throw err;
@@ -257,66 +274,3 @@ async function init() {
 
 // Function call to initialize app
 init();
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-//
-// function init() {
-//     inquirer
-//         .prompt(prompts)
-//         .then((response) => {
-//             switch (response.selection) {
-//                 case "Add Employee":
-//                     inquirer.prompt(addEmployee)
-//                     break;
-//                 case "Add Department":
-//                     inquirer.prompt(addDepartment)
-//                     break;
-//                 case "Add Role":
-//                     inquirer.prompt(addRole)
-//                     break;
-//                 case "Update Employee Role":
-//                     inquirer.prompt(updateRole)
-//                     break;
-//                 case "View All Employees":
-//                     connection.query('SELECT * FROM employee', function (err, results, fields) {
-//                         console.table(results)
-//                     })
-//                     break;
-//                 case "Vew All Departments":
-
-//                     break;
-//                 case "Vew All Roles":
-
-//                     break;
-//                 default:
-//                     console.error("Selection Doesn't Match List");
-//             }
-//         })
-//         .catch(err => console.log(err));
-// }
